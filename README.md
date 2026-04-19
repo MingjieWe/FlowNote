@@ -287,7 +287,9 @@ storage.getUsage()
 ## 📄 许可证
 
 开放非商业用途许可，商业用途需作者授权
+
 Grant an open non-commercial usage license. 
+
 For commercial use, authorization from the author is required.
 
 ## 🙏 致谢
