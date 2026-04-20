@@ -229,7 +229,7 @@ export default function FlowShell({ children }: { children: React.ReactNode }) {
                       FlowNote
                     </div>
                     <div className="mt-0.5 text-[10px]">
-                      {t('common.version')} 0.1.0
+                      {t('common.version')} 0.1.1
                     </div>
                     <div className="mt-1 text-[10px] text-muted-foreground/70">
                       made by haixing🌟

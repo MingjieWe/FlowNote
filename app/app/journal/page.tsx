@@ -13,7 +13,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
@@ -201,35 +200,14 @@ export default function JournalPage() {
   // Generate calendar grid
   const calendarDays = Array(firstDay).fill(null).concat(Array.from({ length: daysInMonth }, (_, i) => i + 1))
 
+  // Get today's date string for highlighting
+  const todayStr = new Date().toISOString().split('T')[0]
+
   const moods: Mood[] = ['happy', 'calm', 'sad', 'excited', 'tired', 'anxious']
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <FadeIn>
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-sm uppercase tracking-[0.3em] text-muted-foreground">
-              {t('journal.title')}
-            </p>
-            <h1 className="mt-3 text-3xl sm:text-4xl font-semibold tracking-tight">
-              {t('journal.subtitle')}
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-7 text-muted-foreground">
-              {t('journal.description')}
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <ScaleOnTap>
-                  <Button size="lg" className="shadow-lg" variant="secondary" onClick={openNewEntry}>
-                    <Plus className="h-5 w-5" />
-                    {t('journal.today')}
-                  </Button>
-                </ScaleOnTap>
-              </DialogTrigger>
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogContent className="sm:max-w-2xl p-0 sm:p-6 gap-0">
                 {/* 移动端头部 */}
                 <div className="px-6 pt-8 pb-4 sm:pt-6 border-b border-border/50 sm:border-none">
@@ -240,7 +218,7 @@ export default function JournalPage() {
                       </div>
                       <div className="text-left">
                       <DialogTitle className="text-xl sm:text-xl">
-                        {t('journal.subtitle')}
+                        {t('journal.title')}
                       </DialogTitle>
                       <p className="text-sm text-muted-foreground mt-1">
                         {formatDate(editingDate, locale)}
@@ -329,9 +307,6 @@ export default function JournalPage() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-          </div>
-        </div>
-      </FadeIn>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
         {/* Calendar Sidebar */}
@@ -370,31 +345,35 @@ export default function JournalPage() {
 
               {/* Calendar Days */}
               <div className="grid grid-cols-7 gap-1">
-                {calendarDays.map((day, idx) => (
-                  <motion.button
-                    key={idx}
-                    onClick={() => {
-                      if (day) {
-                        const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-                        openEditEntry(dateStr)
-                      }
-                    }}
-                    disabled={!day}
-                    whileTap={day ? { scale: 0.9 } : {}}
-                    className={cn(
-                      'relative h-10 w-10 text-sm rounded-xl transition-all duration-200',
-                      !day
-                        ? 'cursor-default'
-                        : 'hover:bg-muted cursor-pointer',
-                      datesWithEntries.has(day) ? 'font-semibold bg-primary/5' : 'text-muted-foreground'
-                    )}
-                  >
-                    {day}
-                    {day && datesWithEntries.has(day) && (
-                      <div className="absolute bottom-1 left-1/2 -translate-x-1/2 h-1 w-1 rounded-full bg-primary" />
-                    )}
-                  </motion.button>
-                ))}
+                {calendarDays.map((day, idx) => {
+                  const dateStr = day ? `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}` : null
+                  const isToday = dateStr === todayStr
+                  return (
+                    <motion.button
+                      key={idx}
+                      onClick={() => {
+                        if (day && dateStr) {
+                          openEditEntry(dateStr)
+                        }
+                      }}
+                      disabled={!day}
+                      whileTap={day ? { scale: 0.9 } : {}}
+                      className={cn(
+                        'relative h-10 w-10 text-sm rounded-xl transition-all duration-200',
+                        !day
+                          ? 'cursor-default'
+                          : 'hover:bg-muted cursor-pointer',
+                        datesWithEntries.has(day) ? 'font-semibold bg-primary/5' : 'text-muted-foreground',
+                        isToday && 'ring-1 ring-foreground'
+                      )}
+                    >
+                      {day}
+                      {day && datesWithEntries.has(day) && (
+                        <div className="absolute bottom-1 left-1/2 -translate-x-1/2 h-1 w-1 rounded-full bg-primary" />
+                      )}
+                    </motion.button>
+                  )
+                })}
               </div>
             </div>
           </div>

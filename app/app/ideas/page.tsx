@@ -1,20 +1,16 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Check, Delete, Plus, Sparkles, Lightbulb } from 'lucide-react'
+import { Delete, Plus, Sparkles, ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
-  DialogClose,
   DialogContent,
-  DialogFooter,
-  DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -31,6 +27,19 @@ interface Idea {
 }
 
 const STORAGE_KEY = 'flownote-ideas'
+
+// 兼容移动端的 UUID 生成
+function generateUUID() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID()
+  }
+  // 降级方案
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0
+    const v = c === 'x' ? r : (r & 0x3 | 0x8)
+    return v.toString(16)
+  })
+}
 const badgeVariants = ['default', 'secondary', 'outline', 'destructive'] as const
 
 type BadgeVariant = (typeof badgeVariants)[number]
@@ -48,13 +57,24 @@ function formatDate(timestamp: number, locale: string) {
   }).format(new Date(timestamp))
 }
 
+function formatDateTime(timestamp: number, locale: string) {
+  return new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).format(new Date(timestamp))
+}
+
 function previewText(content: string) {
   return content.length > 240 ? `${content.slice(0, 240)}...` : content
 }
 
 export default function IdeasPage() {
   const [ideas, setIdeas] = useState<Idea[]>([])
-  const [filterTag, setFilterTag] = useState<string>('All')
+  const [filterTag, setFilterTag] = useState<string>('')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingIdea, setEditingIdea] = useState<Idea | null>(null)
   const [title, setTitle] = useState('')
@@ -62,8 +82,13 @@ export default function IdeasPage() {
   const [tagInput, setTagInput] = useState('')
 
   const { t, locale } = useI18n()
+  const contentRef = useRef<HTMLTextAreaElement>(null)
+  const autoSaveRef = useRef<NodeJS.Timeout | null>(null)
+  const [mounted, setMounted] = useState(false)
 
+  // 客户端挂载后加载数据（避免 hydration 不匹配）
   useEffect(() => {
+    setMounted(true)
     const raw = window.localStorage.getItem(STORAGE_KEY)
     if (raw) {
       try {
@@ -75,9 +100,75 @@ export default function IdeasPage() {
     }
   }, [])
 
+  // 将 auto save 逻辑内联到 useEffect 中，避免依赖问题
+  const doAutoSave = useCallback(() => {
+    const normalizedTags = tagInput
+      .split(',')
+      .map((tag) => tag.trim())
+      .filter(Boolean)
+
+    if (editingIdea) {
+      setIdeas((state) =>
+        state.map((idea) =>
+          idea.id === editingIdea.id
+            ? { ...idea, title: title.trim(), content: content.trim(), tags: normalizedTags }
+            : idea
+        )
+      )
+    } else {
+      const newIdea: Idea = {
+        id: generateUUID(),
+        title: title.trim() || (locale === 'zh' ? '未命名' : 'Untitled'),
+        content: content.trim(),
+        tags: normalizedTags.length > 0 ? normalizedTags : [locale === 'zh' ? '默认' : 'default'],
+        createdAt: Date.now(),
+      }
+      setIdeas((state) => [newIdea, ...state])
+      setEditingIdea(newIdea)
+    }
+  }, [content, title, tagInput, editingIdea, locale])
+
+  // 保存到 localStorage
   useEffect(() => {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(ideas))
-  }, [ideas])
+    if (mounted) {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(ideas))
+    }
+  }, [ideas, mounted])
+
+  // 内容变化时，3秒后自动保存
+  useEffect(() => {
+    if (!dialogOpen) return
+
+    if (autoSaveRef.current) {
+      clearTimeout(autoSaveRef.current)
+    }
+
+    autoSaveRef.current = setTimeout(() => {
+      if (content.trim() || title.trim()) {
+        doAutoSave()
+      }
+    }, 3000)
+
+    return () => {
+      if (autoSaveRef.current) {
+        clearTimeout(autoSaveRef.current)
+      }
+    }
+  }, [title, content, tagInput, dialogOpen, doAutoSave])
+
+  // 页面隐藏/关闭前自动保存
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (dialogOpen && (content.trim() || title.trim())) {
+        doAutoSave()
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+    }
+  }, [dialogOpen, content, title, tagInput, editingIdea, doAutoSave])
 
   const tags = useMemo(() => {
     const set = new Set<string>()
@@ -86,7 +177,7 @@ export default function IdeasPage() {
   }, [ideas, t])
 
   const filteredIdeas = useMemo(() => {
-    if (filterTag === t('ideas.allTags')) {
+    if (!filterTag || filterTag === t('ideas.allTags')) {
       return ideas
     }
     return ideas.filter((idea) => idea.tags.includes(filterTag))
@@ -96,8 +187,12 @@ export default function IdeasPage() {
     setEditingIdea(null)
     setTitle('')
     setContent('')
-    setTagInput('')
+    setTagInput(locale === 'zh' ? '默认' : 'default')
     setDialogOpen(true)
+    // 自动聚焦内容区
+    setTimeout(() => {
+      contentRef.current?.focus()
+    }, 100)
   }
 
   const openEditIdea = (idea: Idea) => {
@@ -112,30 +207,60 @@ export default function IdeasPage() {
     setDialogOpen(false)
   }
 
-  const saveIdea = () => {
+  // 处理 Dialog 关闭（包括点击遮罩、按 ESC）
+  const handleDialogOpenChange = (open: boolean) => {
+    if (!open && dialogOpen) {
+      // Dialog 正在关闭，自动保存
+      const normalizedTags = tagInput
+        .split(',')
+        .map((tag) => tag.trim())
+        .filter(Boolean)
+
+      if (content.trim() || title.trim()) {
+        if (editingIdea) {
+          setIdeas((state) =>
+            state.map((idea) =>
+              idea.id === editingIdea.id
+                ? { ...idea, title: title.trim() || idea.title, content: content.trim(), tags: normalizedTags }
+                : idea
+            )
+          )
+        } else {
+          const newIdea: Idea = {
+            id: generateUUID(),
+            title: title.trim() || (locale === 'zh' ? '未命名' : 'Untitled'),
+            content: content.trim(),
+            tags: normalizedTags.length > 0 ? normalizedTags : [locale === 'zh' ? '默认' : 'default'],
+            createdAt: Date.now(),
+          }
+          setIdeas((state) => [newIdea, ...state])
+        }
+      }
+    }
+    setDialogOpen(open)
+  }
+
+  const saveAndClose = () => {
     const normalizedTags = tagInput
       .split(',')
       .map((tag) => tag.trim())
       .filter(Boolean)
-    if (!title.trim()) {
-      return
-    }
 
     if (editingIdea) {
       setIdeas((state) =>
         state.map((idea) =>
           idea.id === editingIdea.id
-            ? { ...idea, title: title.trim(), content: content.trim(), tags: normalizedTags }
+            ? { ...idea, title: title.trim() || idea.title, content: content.trim(), tags: normalizedTags }
             : idea
         )
       )
       toast.success(t('ideas.updated'))
     } else {
       const newIdea: Idea = {
-        id: crypto.randomUUID(),
-        title: title.trim(),
+        id: generateUUID(),
+        title: title.trim() || (locale === 'zh' ? '未命名' : 'Untitled'),
         content: content.trim(),
-        tags: normalizedTags,
+        tags: normalizedTags.length > 0 ? normalizedTags : [locale === 'zh' ? '默认' : 'default'],
         createdAt: Date.now(),
       }
       setIdeas((state) => [newIdea, ...state])
@@ -160,136 +285,88 @@ export default function IdeasPage() {
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <FadeIn>
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-sm uppercase tracking-[0.3em] text-muted-foreground">
-              {t('ideas.title')}
-            </p>
-            <h1 className="mt-3 text-3xl sm:text-4xl font-semibold tracking-tight">
-              {t('ideas.subtitle')}
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-7 text-muted-foreground">
-              {t('ideas.description')}
-            </p>
-          </div>
+      <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
+              <DialogContent hideClose className="p-0 gap-0 w-full h-full max-w-none sm:rounded-none rounded-none border-0 sm:border-0 overflow-hidden">
+                {/* 隐藏的 DialogTitle 用于无障碍访问 */}
+                <DialogTitle className="sr-only">
+                  {editingIdea ? (locale === 'zh' ? '编辑灵感' : 'Edit Idea') : (locale === 'zh' ? '新灵感' : 'New Idea')}
+                </DialogTitle>
 
-          <div className="flex items-center gap-3">
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <ScaleOnTap>
-                  <Button size="lg" className="shadow-lg" variant="secondary">
-                    <Plus className="h-5 w-5" />
-                    {t('ideas.newIdea')}
-                  </Button>
-                </ScaleOnTap>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-lg p-0 sm:p-6 gap-0">
-                {/* 移动端头部带图标 */}
-                <div className="px-6 pt-8 pb-4 sm:pt-6 border-b border-border/50 sm:border-none">
-                  <DialogHeader className="space-y-3">
-                    <div className="mx-auto sm:mx-0 w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
-                      <Lightbulb className="w-6 h-6 text-primary" />
+                {/* 顶部融合栏 - 包含所有元信息 */}
+                <div className="flex flex-col px-4 sm:px-6 pt-3 sm:pt-4 pb-2 gap-2">
+                  {/* 第一行：返回、日期/字数、删除（编辑时）、保存 */}
+                  <div className="flex items-center justify-between">
+                    <button
+                      onClick={saveAndClose}
+                      className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors py-1"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                      <span className="text-xs">{locale === 'zh' ? '返回' : 'Back'}</span>
+                    </button>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-muted-foreground">
+                        {formatDateTime(Date.now(), locale)}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {content.length} {locale === 'zh' ? '字' : 'chars'}
+                      </span>
                     </div>
-                    <DialogTitle className="text-2xl sm:text-xl">
-                      {editingIdea ? t('ideas.editIdea') : t('ideas.newIdea')}
-                    </DialogTitle>
-                    <p className="text-sm text-muted-foreground">
-                      {editingIdea
-                        ? (locale === 'zh' ? '更新你的灵感内容' : 'Update your idea content')
-                        : (locale === 'zh' ? '记录你的创意和想法' : 'Capture your creative ideas')
-                      }
-                    </p>
-                  </DialogHeader>
-                </div>
-
-                <div className="px-6 py-4 space-y-5 overflow-y-auto">
-                  <div className="space-y-2.5">
-                    <label className="text-sm font-semibold flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-primary/60" />
-                      {t('common.title')}
-                    </label>
+                    <div className="flex items-center gap-2">
+                      {editingIdea && (
+                        <button
+                          onClick={deleteIdea}
+                          className="flex items-center gap-1 text-primary hover:text-primary/80 transition-colors py-1"
+                        >
+                          <Delete className="h-3.5 w-3.5" />
+                          <span className="text-xs font-medium">{locale === 'zh' ? '删除' : 'Delete'}</span>
+                        </button>
+                      )}
+                      <button
+                        onClick={saveAndClose}
+                        className="flex items-center gap-1 text-primary hover:text-primary/80 transition-colors py-1"
+                      >
+                        <span className="text-xs font-medium">{locale === 'zh' ? '保存' : 'Save'}</span>
+                      </button>
+                    </div>
+                  </div>
+                  {/* 第二行：标题输入 */}
+                  <div>
                     <Input
                       value={title}
                       onChange={(event) => setTitle(event.target.value)}
-                      placeholder={t('ideas.titlePlaceholder')}
-                      className="h-12 rounded-xl border-muted-foreground/20 focus:border-primary"
-                      autoFocus
+                      placeholder={locale === 'zh' ? '标题（可选）' : 'Title (optional)'}
+                      className="border-0 bg-transparent text-lg sm:text-xl font-medium placeholder:text-muted-foreground/50 focus-visible:ring-0 focus-visible:ring-offset-0 px-0 h-9"
                     />
                   </div>
-                  <div className="space-y-2.5">
-                    <label className="text-sm font-semibold flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-primary/60" />
-                      {t('common.content')}
-                    </label>
-                    <Textarea
-                      value={content}
-                      onChange={(event) => setContent(event.target.value)}
-                      placeholder={t('ideas.contentPlaceholder')}
-                      rows={5}
-                      className="rounded-xl border-muted-foreground/20 focus:border-primary resize-none"
-                    />
-                  </div>
-                  <div className="space-y-2.5">
-                    <label className="text-sm font-semibold flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-primary/60" />
-                      {t('common.tags')}
-                    </label>
+                  {/* 第三行：Tag栏 */}
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="rounded px-2 py-0.5 text-[10px]">
+                      {locale === 'zh' ? 'Tag' : 'Tag'}
+                    </Badge>
                     <Input
                       value={tagInput}
                       onChange={(event) => setTagInput(event.target.value)}
-                      placeholder={t('ideas.tagsPlaceholder')}
-                      className="h-12 rounded-xl border-muted-foreground/20 focus:border-primary"
+                      placeholder={locale === 'zh' ? '输入标签，用逗号分隔' : 'Enter tags, comma separated'}
+                      className="flex-1 border-0 bg-transparent text-xs placeholder:text-muted-foreground/50 focus-visible:ring-0 focus-visible:ring-offset-0 px-0 h-7"
                     />
-                    {tagInput && (
-                      <div className="flex flex-wrap gap-2 pt-2">
-                        {tagInput.split(',').map((tag, i) => tag.trim() && (
-                          <Badge key={i} variant="secondary" className="rounded-full px-3 py-1">
-                            {tag.trim()}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
+                  </div>
+                  {/* 第四行：内容输入 */}
+                  <div className="mt-1">
+                    <Textarea
+                      ref={contentRef}
+                      value={content}
+                      onChange={(event) => setContent(event.target.value)}
+                      placeholder={locale === 'zh' ? '记录你的灵感...' : 'Write your idea...'}
+                      rows={10}
+                      className="w-full resize-none border-0 bg-transparent placeholder:text-muted-foreground/50 focus-visible:ring-0 focus-visible:ring-offset-0 px-0 text-base sm:text-lg leading-relaxed"
+                    />
                   </div>
                 </div>
-
-                <DialogFooter className="px-6 pb-6 pt-2 border-t border-border/50 sm:border-none">
-                  {editingIdea ? (
-                    <Button
-                      variant="destructive"
-                      onClick={deleteIdea}
-                      type="button"
-                      className="w-full sm:w-auto h-12 rounded-xl"
-                    >
-                      <Delete className="h-4 w-4 mr-2" />
-                      {t('common.delete')}
-                    </Button>
-                  ) : (
-                    <DialogClose asChild>
-                      <Button variant="outline" type="button" className="w-full sm:w-auto h-12 rounded-xl">
-                        {t('common.cancel')}
-                      </Button>
-                    </DialogClose>
-                  )}
-                  <ScaleOnTap className="flex-1 sm:flex-none">
-                    <Button
-                      onClick={saveIdea}
-                      className="w-full sm:w-auto h-12 rounded-xl px-8"
-                      size="lg"
-                    >
-                      <Check className="h-5 w-5 mr-2" />
-                      {t('common.save')}
-                    </Button>
-                  </ScaleOnTap>
-                </DialogFooter>
               </DialogContent>
             </Dialog>
-          </div>
-        </div>
-      </FadeIn>
 
       {/* Tags Filter */}
+      {mounted && (
       <FadeIn delay={0.1}>
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">
@@ -301,7 +378,7 @@ export default function IdeasPage() {
                 whileTap={{ scale: 0.95 }}
                 className={cn(
                   'rounded-full border px-4 py-2 text-sm transition-all duration-200',
-                  filterTag === tag
+                  (filterTag === tag || (!filterTag && tag === t('ideas.allTags')))
                     ? 'border-foreground bg-foreground text-background shadow-md'
                     : 'border-border bg-card text-muted-foreground hover:border-foreground hover:text-foreground'
                 )}
@@ -312,8 +389,10 @@ export default function IdeasPage() {
           </div>
         </div>
       </FadeIn>
+      )}
 
       {/* Ideas Grid */}
+      {mounted && (
       <AnimatePresence mode="wait">
         {filteredIdeas.length === 0 ? (
           <motion.div
@@ -397,6 +476,7 @@ export default function IdeasPage() {
           </motion.div>
         )}
       </AnimatePresence>
+      )}
 
       {/* FAB */}
       <motion.div

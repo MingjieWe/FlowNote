@@ -1,0 +1,7 @@
+{
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/finance/page": "app/finance/page.js",
+  "/ideas/page": "app/ideas/page.js",
+  "/journal/page": "app/journal/page.js",
+  "/manifest.webmanifest/route": "app/manifest.webmanifest/route.js"
+}

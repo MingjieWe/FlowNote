@@ -19,12 +19,11 @@ const translations: Record<Locale, Translations> = {
     // Ideas page
     ideas: {
       title: '灵感笔记',
-      subtitle: 'Your ideas notebook',
       description: '随时捕捉、筛选和编辑您的想法卡片。您的笔记安全地保存在本地。',
       newIdea: '新灵感',
       editIdea: '编辑灵感',
-      noIdeas: '还没有灵感',
-      noIdeasDesc: '使用下方按钮创建您的第一个灵感，或清除当前筛选查看所有笔记。',
+      noIdeas: '创造新的灵感',
+      noIdeasDesc: '使用下方按钮创建您的一个新灵感，或清除当前筛选查看所有笔记。',
       allTags: '全部',
       titlePlaceholder: '灵感标题',
       contentPlaceholder: '描述您的想法...',
@@ -40,7 +39,6 @@ const translations: Record<Locale, Translations> = {
     // Journal page
     journal: {
       title: '每日反思',
-      subtitle: 'Daily reflections',
       description: '记录您的想法、感受和时刻。每一个条目都是珍贵的回忆。',
       today: '今天',
       noEntries: '本月无记录',
@@ -66,7 +64,6 @@ const translations: Record<Locale, Translations> = {
     // Finance page
     finance: {
       title: '财务管理',
-      subtitle: 'Track your money',
       description: '追踪收入和支出，分析消费习惯，明智地管理您的财务。',
       newTransaction: '新交易',
       income: '收入',
@@ -128,12 +125,11 @@ const translations: Record<Locale, Translations> = {
     // Ideas page
     ideas: {
       title: 'Ideas',
-      subtitle: 'Your ideas notebook',
       description: 'Capture, filter, and edit your idea cards instantly. Your notes are saved locally.',
       newIdea: 'New Idea',
       editIdea: 'Edit Idea',
-      noIdeas: 'No ideas yet',
-      noIdeasDesc: 'Create your first idea using the button below, or clear the current filter to see all notes.',
+      noIdeas: 'Create New Inspiration',
+      noIdeasDesc: 'Use the button below to create a new inspiration, or clear the current filter to see all notes.',
       allTags: 'All',
       titlePlaceholder: 'Brainstorm title',
       contentPlaceholder: 'Describe the idea...',
@@ -149,7 +145,6 @@ const translations: Record<Locale, Translations> = {
     // Journal page
     journal: {
       title: 'Journal',
-      subtitle: 'Daily reflections',
       description: 'Capture your thoughts, feelings, and moments. Every entry is precious.',
       today: 'Today',
       noEntries: 'No entries this month',
@@ -175,7 +170,6 @@ const translations: Record<Locale, Translations> = {
     // Finance page
     finance: {
       title: 'Finance',
-      subtitle: 'Track your money',
       description: 'Monitor income and expenses, analyze spending patterns, and manage your finances wisely.',
       newTransaction: 'New Transaction',
       income: 'Income',

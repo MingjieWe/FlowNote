@@ -30,7 +30,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -232,32 +231,8 @@ export default function FinancePage() {
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <FadeIn>
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-sm uppercase tracking-[0.3em] text-muted-foreground">
-              {t('finance.title')}
-            </p>
-            <h1 className="mt-3 text-3xl sm:text-4xl font-semibold tracking-tight">
-              {t('finance.subtitle')}
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-7 text-muted-foreground">
-              {t('finance.description')}
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <ScaleOnTap>
-                  <Button size="lg" className="shadow-lg" variant="secondary" onClick={openNewTransaction}>
-                    <Plus className="h-5 w-5" />
-                    {t('finance.newTransaction')}
-                  </Button>
-                </ScaleOnTap>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md p-0 sm:p-6 gap-0">
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-md p-0 sm:p-6 gap-0">
                 {/* 移动端头部 */}
                 <div className="px-6 pt-8 pb-4 sm:pt-6 border-b border-border/50 sm:border-none">
                   <DialogHeader className="space-y-3">
@@ -426,9 +401,6 @@ export default function FinancePage() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-          </div>
-        </div>
-      </FadeIn>
 
       {/* Month Navigation */}
       <FadeIn delay={0.1}>
