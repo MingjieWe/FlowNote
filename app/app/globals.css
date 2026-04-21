@@ -100,6 +100,35 @@ button, input, textarea, select, a {
   min-width: 44px;
 }
 
+/* Mobile-friendly calendar date borders */
+@supports (-webkit-appearance: none) {
+  .border {
+    border-width: 1px;
+    border-style: solid;
+  }
+  
+  .border-foreground {
+    border-color: hsl(var(--foreground)) !important;
+  }
+}
+
+/* Ensure borders work on mobile WebView */
+@media (max-width: 768px) {
+  button[class*="border"] {
+    border-width: 1px !important;
+    border-style: solid !important;
+  }
+  
+  button[class*="border-foreground"] {
+    border-color: hsl(var(--foreground)) !important;
+  }
+}
+
+/* Explicit style for today's date button */
+button[data-today="true"] {
+  border: 1px solid hsl(var(--foreground));
+}
+
 /* Button tap feedback */
 button:active:not(:disabled) {
   transform: scale(0.98);

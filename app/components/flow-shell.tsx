@@ -249,7 +249,7 @@ export default function FlowShell({ children }: { children: React.ReactNode }) {
                       FlowNote
                     </div>
                     <div className="mt-0.5 text-[10px]">
-                      {t('common.version')} 0.1.1
+                      {t('common.version')} 0.1.2
                     </div>
                     <div className="mt-1 text-[10px] text-muted-foreground/70">
                       made by haixing🌟
@@ -377,7 +377,7 @@ export default function FlowShell({ children }: { children: React.ReactNode }) {
 
                     <div className="mt-auto pt-6 border-t border-border">
                       <div className="text-sm text-muted-foreground">
-                        FlowNote v0.1.0
+                        FlowNote v0.1.2
                       </div>
                       <div className="mt-1 text-xs text-muted-foreground/70">
                         made by haixing🌟

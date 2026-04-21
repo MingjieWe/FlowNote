@@ -122,7 +122,7 @@ export default function FinancePage() {
   const [editingNote, setEditingNote] = useState('')
   const { t, locale } = useI18n()
 
-  // Load from localStorage
+  // Load from localStorage - sync once on mount
   useEffect(() => {
     const raw = window.localStorage.getItem(STORAGE_KEY)
     if (raw) {
@@ -135,9 +135,12 @@ export default function FinancePage() {
     }
   }, [])
 
-  // Save to localStorage
+  // Save to localStorage with debounce to avoid excessive writes
   useEffect(() => {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions))
+    const timeoutId = setTimeout(() => {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions))
+    }, 500)
+    return () => clearTimeout(timeoutId)
   }, [transactions])
 
   const yearMonth = useMemo(() => getYearMonth(currentMonth), [currentMonth])

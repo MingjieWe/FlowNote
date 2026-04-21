@@ -84,7 +84,7 @@ export default function JournalPage() {
   const [editingContent, setEditingContent] = useState('')
   const { t, locale } = useI18n()
 
-  // Load from localStorage
+  // Load from localStorage - sync once on mount
   useEffect(() => {
     const raw = window.localStorage.getItem(STORAGE_KEY)
     if (raw) {
@@ -97,9 +97,12 @@ export default function JournalPage() {
     }
   }, [])
 
-  // Save to localStorage
+  // Save to localStorage with debounce to avoid excessive writes
   useEffect(() => {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(entries))
+    const timeoutId = setTimeout(() => {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(entries))
+    }, 500)
+    return () => clearTimeout(timeoutId)
   }, [entries])
 
   const yearMonth = useMemo(() => getYearMonth(currentMonth), [currentMonth])
@@ -358,13 +361,14 @@ export default function JournalPage() {
                       }}
                       disabled={!day}
                       whileTap={day ? { scale: 0.9 } : {}}
+                      data-today={isToday ? 'true' : undefined}
                       className={cn(
                         'relative h-10 w-10 text-sm rounded-xl transition-all duration-200',
                         !day
                           ? 'cursor-default'
                           : 'hover:bg-muted cursor-pointer',
                         datesWithEntries.has(day) ? 'font-semibold bg-primary/5' : 'text-muted-foreground',
-                        isToday && 'ring-1 ring-foreground'
+                        isToday && 'border border-foreground'
                       )}
                     >
                       {day}
