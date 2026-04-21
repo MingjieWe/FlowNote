@@ -286,14 +286,14 @@ export default function IdeasPage() {
   return (
     <div className="space-y-8">
       <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
-              <DialogContent hideClose className="p-0 gap-0 w-full h-full max-w-none sm:rounded-none rounded-none border-0 sm:border-0 overflow-hidden">
+              <DialogContent hideClose className="p-0 gap-0 w-full h-full max-w-none inset-0 translate-x-0 translate-y-0 sm:rounded-none rounded-none border-0 sm:border-0 overflow-y-auto">
                 {/* 隐藏的 DialogTitle 用于无障碍访问 */}
                 <DialogTitle className="sr-only">
                   {editingIdea ? (locale === 'zh' ? '编辑灵感' : 'Edit Idea') : (locale === 'zh' ? '新灵感' : 'New Idea')}
                 </DialogTitle>
 
                 {/* 顶部融合栏 - 包含所有元信息 */}
-                <div className="flex flex-col px-4 sm:px-6 pt-3 sm:pt-4 pb-2 gap-2">
+                <div className="flex flex-col px-4 sm:px-6 pt-3 sm:pt-4 pb-6 gap-2">
                   {/* 第一行：返回、日期/字数、删除（编辑时）、保存 */}
                   <div className="flex items-center justify-between">
                     <button
@@ -357,7 +357,7 @@ export default function IdeasPage() {
                       value={content}
                       onChange={(event) => setContent(event.target.value)}
                       placeholder={locale === 'zh' ? '记录你的灵感...' : 'Write your idea...'}
-                      rows={10}
+                      rows={15}
                       className="w-full resize-none border-0 bg-transparent placeholder:text-muted-foreground/50 focus-visible:ring-0 focus-visible:ring-offset-0 px-0 text-base sm:text-lg leading-relaxed"
                     />
                   </div>

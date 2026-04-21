@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -27,6 +27,8 @@ export default function FlowShell({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [headerVisible, setHeaderVisible] = useState(true)
+  const lastScrollY = useRef(0)
   const { setTheme, resolvedTheme } = useTheme()
   const { locale, setLocale, t } = useI18n()
 
@@ -39,6 +41,24 @@ export default function FlowShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setMobileMenuOpen(false)
   }, [pathname])
+
+  // Scroll tracking: hide header on scroll up, show on scroll down
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentY = window.scrollY
+      if (mobileMenuOpen) return
+      if (currentY <= 0) {
+        setHeaderVisible(true)
+      } else if (currentY > lastScrollY.current + 5) {
+        setHeaderVisible(false)
+      } else if (currentY < lastScrollY.current - 5) {
+        setHeaderVisible(true)
+      }
+      lastScrollY.current = currentY
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [mobileMenuOpen])
 
   const navigation = [
     {
@@ -243,7 +263,13 @@ export default function FlowShell({ children }: { children: React.ReactNode }) {
 
         <div className={cn(navWidthClass, 'transition-all duration-300')}>
           {/* Mobile Header */}
-          <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-background/80 backdrop-blur-xl px-4 py-3 lg:hidden">
+          <header
+            className={cn(
+              'fixed top-0 left-0 right-0 z-30 flex items-center justify-between border-b border-border bg-background/80 backdrop-blur-xl px-4 py-3 lg:hidden',
+              'transition-transform duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)]',
+              headerVisible ? 'translate-y-0' : '-translate-y-full'
+            )}
+          >
             <div className="text-lg font-semibold">FlowNote</div>
             <div className="flex items-center gap-1">
               <Button
@@ -278,6 +304,9 @@ export default function FlowShell({ children }: { children: React.ReactNode }) {
               </Button>
             </div>
           </header>
+
+          {/* Spacer for fixed mobile header */}
+          <div className="h-[56px] lg:hidden" />
 
           {/* Mobile Menu Overlay - Back on the RIGHT side */}
           <AnimatePresence>
