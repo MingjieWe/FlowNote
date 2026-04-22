@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+      夜间模式主题：仍然使用固定浅色（Web 端完全控制）
+      这确保即使系统切换到深色模式，WebView 仍保持浅色背景
+    -->
+    <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:background">@null</item>
+        <!-- 禁用 Android 自动反色 -->
+        <item name="android:forceDarkAllowed" tools:targetApi="29">false</item>
+        <!-- 固定白色背景 -->
+        <item name="android:windowBackground">@android:color/white</item>
+        <!-- 状态栏保持浅色 -->
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:statusBarColor">@android:color/white</item>
+    </style>
+
+</resources>

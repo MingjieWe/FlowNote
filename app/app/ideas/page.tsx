@@ -286,16 +286,16 @@ export default function IdeasPage() {
   return (
     <div className="space-y-8">
       <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
-              <DialogContent hideClose className="p-0 gap-0 w-full h-full max-w-none inset-0 translate-x-0 translate-y-0 sm:rounded-none rounded-none border-0 sm:border-0 overflow-y-auto">
+              <DialogContent hideClose className="!fixed !inset-0 !w-full !h-full !max-w-none !max-h-none !translate-x-0 !translate-y-0 !left-0 !right-0 !top-0 !bottom-0 !rounded-none !border-0 !p-0 !gap-0 z-[100] !block !overflow-y-auto">
                 {/* 隐藏的 DialogTitle 用于无障碍访问 */}
                 <DialogTitle className="sr-only">
                   {editingIdea ? (locale === 'zh' ? '编辑灵感' : 'Edit Idea') : (locale === 'zh' ? '新灵感' : 'New Idea')}
                 </DialogTitle>
 
-                {/* 顶部融合栏 - 包含所有元信息 */}
-                <div className="flex flex-col px-4 sm:px-6 pt-3 sm:pt-4 pb-6 gap-2">
+                {/* 编辑内容区 - 自然流式布局确保一起滚动 */}
+                <div className="px-4 sm:px-6 pt-3 sm:pt-4 pb-20">
                   {/* 第一行：返回、日期/字数、删除（编辑时）、保存 */}
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between sticky top-0 bg-background/95 backdrop-blur-sm z-10 py-2">
                     <button
                       onClick={saveAndClose}
                       className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors py-1"
@@ -330,7 +330,7 @@ export default function IdeasPage() {
                     </div>
                   </div>
                   {/* 第二行：标题输入 */}
-                  <div>
+                  <div className="mt-2">
                     <Input
                       value={title}
                       onChange={(event) => setTitle(event.target.value)}
@@ -339,7 +339,7 @@ export default function IdeasPage() {
                     />
                   </div>
                   {/* 第三行：Tag栏 */}
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 mt-2">
                     <Badge variant="secondary" className="rounded px-2 py-0.5 text-[10px]">
                       {locale === 'zh' ? 'Tag' : 'Tag'}
                     </Badge>
@@ -351,14 +351,14 @@ export default function IdeasPage() {
                     />
                   </div>
                   {/* 第四行：内容输入 */}
-                  <div className="mt-1">
+                  <div className="mt-4">
                     <Textarea
                       ref={contentRef}
                       value={content}
                       onChange={(event) => setContent(event.target.value)}
                       placeholder={locale === 'zh' ? '记录你的灵感...' : 'Write your idea...'}
-                      rows={15}
-                      className="w-full resize-none border-0 bg-transparent placeholder:text-muted-foreground/50 focus-visible:ring-0 focus-visible:ring-offset-0 px-0 text-base sm:text-lg leading-relaxed"
+                      rows={20}
+                      className="w-full resize-none border-0 bg-transparent placeholder:text-muted-foreground/50 focus-visible:ring-0 focus-visible:ring-offset-0 px-0 text-base sm:text-lg leading-relaxed min-h-[50vh]"
                     />
                   </div>
                 </div>
@@ -369,7 +369,7 @@ export default function IdeasPage() {
       {mounted && (
       <FadeIn delay={0.1}>
         <div className="space-y-4">
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4 sm:-mx-6 sm:px-6">
             {tags.map((tag) => (
               <motion.button
                 key={tag}
@@ -377,7 +377,7 @@ export default function IdeasPage() {
                 onClick={() => setFilterTag(tag)}
                 whileTap={{ scale: 0.95 }}
                 className={cn(
-                  'rounded-full border px-4 py-2 text-sm transition-all duration-200',
+                  'shrink-0 rounded-full border px-4 py-2 text-sm transition-all duration-200',
                   (filterTag === tag || (!filterTag && tag === t('ideas.allTags')))
                     ? 'border-foreground bg-foreground text-background shadow-md'
                     : 'border-border bg-card text-muted-foreground hover:border-foreground hover:text-foreground'

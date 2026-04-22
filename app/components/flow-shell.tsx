@@ -44,8 +44,13 @@ export default function FlowShell({ children }: { children: React.ReactNode }) {
 
   // Scroll tracking: hide header on scroll up, show on scroll down
   useEffect(() => {
+    const getScrollY = () => {
+      // 兼容移动端 WebView：优先使用 window.scrollY，如果不存在则使用 document
+      return window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0
+    }
+
     const handleScroll = () => {
-      const currentY = window.scrollY
+      const currentY = getScrollY()
       if (mobileMenuOpen) return
       if (currentY <= 0) {
         setHeaderVisible(true)
@@ -56,8 +61,15 @@ export default function FlowShell({ children }: { children: React.ReactNode }) {
       }
       lastScrollY.current = currentY
     }
+
+    // 在 window 和 document 上都监听，确保 WebView 兼容
     window.addEventListener('scroll', handleScroll, { passive: true })
-    return () => window.removeEventListener('scroll', handleScroll)
+    document.addEventListener('scroll', handleScroll, { passive: true })
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      document.removeEventListener('scroll', handleScroll)
+    }
   }, [mobileMenuOpen])
 
   const navigation = [
@@ -249,7 +261,7 @@ export default function FlowShell({ children }: { children: React.ReactNode }) {
                       FlowNote
                     </div>
                     <div className="mt-0.5 text-[10px]">
-                      {t('common.version')} 0.1.2
+                      {t('common.version')} 0.1.3
                     </div>
                     <div className="mt-1 text-[10px] text-muted-foreground/70">
                       made by haixing🌟
@@ -377,7 +389,7 @@ export default function FlowShell({ children }: { children: React.ReactNode }) {
 
                     <div className="mt-auto pt-6 border-t border-border">
                       <div className="text-sm text-muted-foreground">
-                        FlowNote v0.1.2
+                        FlowNote v0.1.3
                       </div>
                       <div className="mt-1 text-xs text-muted-foreground/70">
                         made by haixing🌟

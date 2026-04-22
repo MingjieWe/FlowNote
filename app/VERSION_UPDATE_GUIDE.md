@@ -37,6 +37,7 @@ MARKETING_VERSION = 0.1.2;       // 与版本号一致
 ```tsx
 // 侧边栏底部
 {t('common.version')} 0.1.2
+注意安卓侧边栏更新
 
 // 移动端菜单
 FlowNote v0.1.2

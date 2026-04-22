@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Base application theme. -->
     <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
@@ -9,12 +9,24 @@
         <item name="colorAccent">@color/colorAccent</item>
     </style>
 
-    <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar">
+    <!--
+      主主题：固定浅色（Web 端完全控制主题）
+      - 使用 Light.NoActionBar 而非 DayNight，防止 Android 自动切换
+      - 禁用 Force Dark，防止系统自动反色
+      - Web 端通过 localStorage 保存用户主题偏好
+    -->
+    <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
+        <!-- 禁用 Android 自动反色，让 Web 端控制主题 -->
+        <item name="android:forceDarkAllowed" tools:targetApi="29">false</item>
+        <!-- WebView 背景透明，让 CSS 控制 -->
+        <item name="android:windowBackground">@android:color/white</item>
+        <!-- 状态栏设置为浅色背景 + 深色图标 -->
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:statusBarColor">@android:color/white</item>
     </style>
-
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="android:background">@drawable/splash</item>
